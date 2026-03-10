@@ -58,6 +58,9 @@ class EmailTokenObtainPairSerializer(TokenObtainPairSerializer):
         return super().get_token(user)
 
     def validate(self, attrs):
-        data = super().validate(attrs)
+        normalized_attrs = attrs.copy()
+        if "email" in normalized_attrs:
+            normalized_attrs["email"] = User.objects.normalize_email(attrs["email"])
+        data = super().validate(normalized_attrs)
         data["user"] = AuthUserSerializer(self.user).data
         return data

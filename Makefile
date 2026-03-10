@@ -1,6 +1,8 @@
 BACKEND_DIR := backend
 FRONTEND_DIR := frontend
-BACKEND_PYTHON := $(BACKEND_DIR)/venv/bin/python
+BACKEND_PYTHON ?= $(BACKEND_DIR)/venv/bin/python
+BACKEND_PYTEST ?= $(BACKEND_DIR)/venv/bin/pytest
+BACKEND_MANAGE := $(BACKEND_PYTHON) $(BACKEND_DIR)/manage.py
 FRONTEND_NPM := npm --prefix $(FRONTEND_DIR)
 
 include make/quality.mk
@@ -15,7 +17,7 @@ dev:
 	@echo "Run 'make dev-backend' and 'make dev-frontend' in separate terminals."
 
 dev-backend:
-	cd $(BACKEND_DIR) && venv/bin/python manage.py runserver 127.0.0.1:8000
+	$(BACKEND_MANAGE) runserver 127.0.0.1:8000
 
 dev-frontend:
 	$(FRONTEND_NPM) run dev -- --host 127.0.0.1 --port 5173

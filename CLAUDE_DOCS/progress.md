@@ -2,22 +2,22 @@
 
 > **For Claude:** Read this file at the start of every session to know what's done and what's next.
 > Update checkboxes as work completes. Never mark done unless verified working.
-> Last updated: Mar 08, 2026
+> Last updated: Mar 10, 2026
 
 ---
 
 ## Quick Status
 
 ```
-Phase: PLANNING ✓ → IMPLEMENTATION (not started)
+Phase: PLANNING ✓ → IMPLEMENTATION ✓
 
 Docs:     ████████████ 100%   All 6 CLAUDE_DOCS complete
-Backend:  ░░░░░░░░░░░░   0%   Not started
-Frontend: ░░░░░░░░░░░░   0%   Not started
+Backend:  ███░░░░░░░░░  25%   Week 1 scaffold + auth complete
+Frontend: ███░░░░░░░░░  25%   Week 1 shell + auth complete
 ```
 
 **Current Week:** Week 1 complete
-**Next Action:** Start Week 2 — stock data layer + cache-through FMP proxy
+**Next Action:** Start Week 2 — stock data layer + cache-through FMP proxy after the remaining manual Week 1 checks (`createsuperuser`, curl auth smoke) are closed
 
 ---
 

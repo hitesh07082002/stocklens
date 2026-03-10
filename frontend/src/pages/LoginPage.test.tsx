@@ -30,6 +30,7 @@ describe("LoginPage", () => {
       </MemoryRouter>,
     )
 
+    await screen.findByRole("heading", { name: /welcome back/i })
     await user.type(screen.getByLabelText(/email/i), "investor@example.com")
     await user.type(screen.getByLabelText(/password/i), "SecurePass123!")
     await user.click(screen.getByRole("button", { name: /sign in/i }))

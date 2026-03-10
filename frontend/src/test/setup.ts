@@ -63,6 +63,6 @@ beforeEach(() => {
   useAuthStore.setState({
     accessToken: null,
     user: null,
-    isBootstrapping: false,
+    isBootstrapping: true,
   })
 })

@@ -13,10 +13,8 @@ def split_csv(value: str) -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
-SECRET_KEY = os.getenv(
-    "SECRET_KEY",
-    "dev-secret-key-change-me-at-least-32-bytes",
-)
+DEV_SECRET_KEY = "dev-secret-key-change-me-at-least-32-bytes"
+SECRET_KEY = os.getenv("SECRET_KEY", DEV_SECRET_KEY)
 DEBUG = False
 ALLOWED_HOSTS = split_csv(os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1"))
 

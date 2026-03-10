@@ -8,7 +8,7 @@ export function ProtectedRoute() {
   const isBootstrapping = useAuthStore((state) => state.isBootstrapping)
   const user = useAuthStore((state) => state.user)
 
-  if (isBootstrapping) {
+  if (isBootstrapping && !user) {
     return null
   }
 

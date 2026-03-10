@@ -41,6 +41,23 @@ def test_signup_duplicate_email(api_client):
     assert response.data["email"] == ["A user with this email already exists."]
 
 
+def test_signup_duplicate_email_is_case_insensitive(api_client):
+    UserFactory(email="dupe@example.com")
+
+    response = api_client.post(
+        reverse("auth-signup"),
+        {
+            "email": "DUPE@EXAMPLE.COM",
+            "password": "SecurePass123!",
+            "confirm_password": "SecurePass123!",
+        },
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.data["email"] == ["A user with this email already exists."]
+
+
 def test_signup_weak_password(api_client):
     response = api_client.post(
         reverse("auth-signup"),
@@ -88,6 +105,33 @@ def test_login_success(api_client):
     assert response.status_code == 200
     assert set(response.data.keys()) == {"access", "refresh", "user"}
     assert response.data["user"]["email"] == "login@example.com"
+
+
+def test_signup_normalizes_email_and_login_is_case_insensitive(api_client):
+    signup_response = api_client.post(
+        reverse("auth-signup"),
+        {
+            "email": "Mixed.User@Example.COM",
+            "password": "SecurePass123!",
+            "confirm_password": "SecurePass123!",
+        },
+        format="json",
+    )
+
+    assert signup_response.status_code == 201
+    assert signup_response.data["user"]["email"] == "mixed.user@example.com"
+
+    login_response = api_client.post(
+        reverse("auth-login"),
+        {
+            "email": "MIXED.user@example.com",
+            "password": "SecurePass123!",
+        },
+        format="json",
+    )
+
+    assert login_response.status_code == 200
+    assert login_response.data["user"]["email"] == "mixed.user@example.com"
 
 
 def test_login_wrong_password(api_client):

@@ -1,73 +1,70 @@
-# React + TypeScript + Vite
+# StockLens Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Week 1 frontend for StockLens: React + Vite + TypeScript + Tailwind, wired to the Django API for JWT auth.
 
-Currently, two official plugins are available:
+## Install
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Run The Dev Server
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
+
+The app runs on `http://localhost:5173`.
+
+## Checks
+
+```bash
+npm run lint
+npm run typecheck
+npm test
+npm run build
+```
+
+Repo-level equivalents from the project root:
+
+```bash
+make lint
+make test
+make build
+```
+
+## Environment Variables
+
+Create `frontend/.env.local` with:
+
+```bash
+VITE_API_URL=http://localhost:8000
+```
+
+If `VITE_API_URL` is omitted locally, relative `/api/*` requests still work through the Vite proxy. Production deploys should set the explicit backend URL.
+
+## Backend API Wiring / CORS
+
+- Frontend calls `/api/v1/auth/*`
+- Vite proxies `/api` to `http://localhost:8000`
+- Django should allow `FRONTEND_URL=http://localhost:5173`
+- Week 1 auth is JWT-only; there is no cookie auth path
+
+## Auth Flow Summary
+
+- Signup/login return `{ access, refresh, user }`
+- Access token stays in Zustand memory only
+- Refresh token and user snapshot `{ id, email }` are persisted in `localStorage`
+- On reload, the user is restored immediately and the client refreshes the access token silently in the background
+- On refresh failure, the client clears auth state and falls back to an unauthenticated session
+
+## Key Frontend Entry Points
+
+- `src/App.tsx` — providers and dev-only React Query devtools
+- `src/router.tsx` — route graph and protected-route placement
+- `src/api/client.ts` — axios client, auth header injection, 401 refresh retry
+- `src/hooks/useAuthBootstrap.ts` — persisted-auth restore and silent refresh
+- `src/store/authStore.ts` — in-memory access token + persisted user coordination
+- `src/store/uiStore.ts` — dark-mode persistence
+- `src/pages/LoginPage.tsx` and `src/pages/SignupPage.tsx` — auth forms
+- `src/components/layout/AppLayout.tsx` — global app shell

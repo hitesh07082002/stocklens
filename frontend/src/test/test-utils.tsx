@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query"
 import { render } from "@testing-library/react"
 import type { PropsWithChildren, ReactElement } from "react"

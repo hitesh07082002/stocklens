@@ -7,6 +7,7 @@ import { z } from "zod"
 import { authApi } from "../api/auth"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card"
 import { Input } from "../components/ui/Input"
+import { sanitizeNextPath } from "../lib/navigation"
 import { Button } from "../components/ui/Button"
 import { useAuthStore } from "../store/authStore"
 
@@ -24,7 +25,7 @@ export function LoginPage() {
   const [formError, setFormError] = useState("")
   const setAuth = useAuthStore((state) => state.setAuth)
   const user = useAuthStore((state) => state.user)
-  const nextPath = searchParams.get("next") || "/"
+  const nextPath = sanitizeNextPath(searchParams.get("next"))
 
   const {
     register,

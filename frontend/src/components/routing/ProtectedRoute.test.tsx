@@ -44,6 +44,18 @@ describe("ProtectedRoute", () => {
     expect(screen.getByRole("heading", { name: /welcome back/i })).toBeInTheDocument()
   })
 
+  it("restores a persisted user immediately and refreshes in the background", async () => {
+    window.localStorage.setItem("user", JSON.stringify({ id: 7, email: "restored@example.com" }))
+    window.localStorage.setItem("refresh_token", "persisted-refresh-token")
+
+    renderProtectedRoute()
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: /watchlist shell/i })).toBeInTheDocument())
+    await waitFor(() => expect(useAuthStore.getState().accessToken).toBe("mock-refreshed-access-token"))
+    expect(screen.getByText("restored@example.com")).toBeInTheDocument()
+    expect(window.localStorage.getItem("refresh_token")).toBe("mock-refreshed-refresh-token")
+  })
+
   it("clears auth and stays unauthenticated when user exists without refresh token", async () => {
     window.localStorage.setItem("user", JSON.stringify({ id: 7, email: "partial@example.com" }))
 

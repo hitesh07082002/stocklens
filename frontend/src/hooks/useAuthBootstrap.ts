@@ -29,6 +29,7 @@ export function useAuthBootstrap() {
       }
 
       restoreUser(storedUser)
+      finishBootstrapping()
 
       try {
         const tokens = await authApi.refresh(refreshToken)
@@ -42,11 +43,6 @@ export function useAuthBootstrap() {
         if (active) {
           clearAuth()
         }
-        return
-      }
-
-      if (active) {
-        finishBootstrapping()
       }
     }
 

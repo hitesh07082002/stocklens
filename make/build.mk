@@ -3,11 +3,10 @@
 build: build-backend build-frontend
 
 build-backend:
-	cd $(BACKEND_DIR) && venv/bin/python -m compileall apps config conftest.py manage.py
+	$(BACKEND_PYTHON) -m compileall $(BACKEND_DIR)/apps $(BACKEND_DIR)/config $(BACKEND_DIR)/conftest.py $(BACKEND_DIR)/manage.py
 
 build-frontend:
 	$(FRONTEND_NPM) run build
 
 _clean:
-	-trash $(FRONTEND_DIR)/dist
-	-trash $(BACKEND_DIR)/.pytest_cache
+	rm -rf $(FRONTEND_DIR)/dist $(BACKEND_DIR)/.pytest_cache

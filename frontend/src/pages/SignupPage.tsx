@@ -8,6 +8,7 @@ import { authApi } from "../api/auth"
 import { Button } from "../components/ui/Button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card"
 import { Input } from "../components/ui/Input"
+import { sanitizeNextPath } from "../lib/navigation"
 import { useAuthStore } from "../store/authStore"
 
 
@@ -30,7 +31,7 @@ export function SignupPage() {
   const [formError, setFormError] = useState("")
   const setAuth = useAuthStore((state) => state.setAuth)
   const user = useAuthStore((state) => state.user)
-  const nextPath = searchParams.get("next") || "/"
+  const nextPath = sanitizeNextPath(searchParams.get("next"))
 
   const {
     register,

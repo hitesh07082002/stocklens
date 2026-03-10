@@ -3,7 +3,8 @@
 lint: lint-backend lint-frontend
 
 lint-backend:
-	cd $(BACKEND_DIR) && venv/bin/python manage.py check
+	$(BACKEND_MANAGE) check
 
 lint-frontend:
+	$(FRONTEND_NPM) run lint
 	$(FRONTEND_NPM) run typecheck

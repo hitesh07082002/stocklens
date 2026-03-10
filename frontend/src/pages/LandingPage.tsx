@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom"
 
 import { PageShell } from "../components/layout/PageShell"
-import { Button } from "../components/ui/Button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/Card"
 
 
@@ -20,6 +19,15 @@ const featureCards = [
   },
 ]
 
+const actionLinkClasses = {
+  ghost:
+    "inline-flex items-center justify-center rounded-full bg-transparent px-4 py-2 text-sm font-semibold text-ink transition duration-150 hover:bg-black/5 dark:text-slate-100 dark:hover:bg-white/10",
+  primary:
+    "inline-flex items-center justify-center rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white shadow-panel transition duration-150 hover:-translate-y-0.5 dark:bg-white dark:text-slate-900",
+  secondary:
+    "inline-flex items-center justify-center rounded-full border border-border bg-white/80 px-4 py-2 text-sm font-semibold text-ink transition duration-150 hover:bg-white dark:bg-slate-900/80 dark:text-slate-100 dark:hover:bg-slate-900",
+}
+
 export function LandingPage() {
   return (
     <PageShell
@@ -37,18 +45,14 @@ export function LandingPage() {
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid gap-3 md:grid-cols-3">
-              <Link to="/stocks/AAPL">
-                <Button className="w-full justify-center">Open Dashboard</Button>
+              <Link className={`${actionLinkClasses.primary} w-full`} to="/stocks/AAPL">
+                Open Dashboard
               </Link>
-              <Link to="/signup">
-                <Button className="w-full justify-center" variant="secondary">
-                  Create Account
-                </Button>
+              <Link className={`${actionLinkClasses.secondary} w-full`} to="/signup">
+                Create Account
               </Link>
-              <Link to="/watchlist">
-                <Button className="w-full justify-center" variant="ghost">
-                  Test Protected Route
-                </Button>
+              <Link className={`${actionLinkClasses.ghost} w-full`} to="/watchlist">
+                Test Protected Route
               </Link>
             </div>
             <div className="rounded-[24px] border border-border bg-slate-950 px-5 py-4 text-sm text-slate-100">
