@@ -9,6 +9,9 @@ backend/staticfiles/
 backend/venv/
 
 frontend/.env.local
+frontend/.vite/
 frontend/dist/
 frontend/node_modules/
 frontend/coverage/
+
+GPT_DOCS/
