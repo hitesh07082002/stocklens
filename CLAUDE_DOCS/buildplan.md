@@ -217,7 +217,7 @@ npx shadcn@latest add button card badge skeleton dialog input
   - `get_profile(symbol)` → calls FMP `profile` (identity, 7d TTL) + `quote` (price/change, 12h TTL), stores in `Stock`
   - `get_financials(symbol)` → calls FMP `income-statement` + `cash-flow-statement` + `balance-sheet-statement`, stores in `FinancialStatement`, caches 24h
   - `get_metrics(symbol)` → calls FMP `ratios` + `key-metrics` + `financial-growth`, stores in `KeyMetric` (sets `is_latest=True` on most recent fiscal year row only), triggers health score recomputation, caches 24h
-  - `get_prices(symbol, range)` → calls FMP `historical-price-eod/full`, stores in `PriceHistory`, caches 12h
+  - `get_prices(symbol, range)` → calls FMP `historical-price-eod/full`, stores/refreshes `PriceHistory` from cache metadata, caches 12h, and avoids rewriting rows on warm-cache reads
   - `search(query)` → DB first, FMP fallback, caches 30d
   - `record_view(user, stock)` → upserts `RecentlyViewed`, trims to 10
 

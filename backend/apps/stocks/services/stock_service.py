@@ -116,7 +116,7 @@ def _ensure_stock_exists(symbol: str) -> Stock:
     stock = Stock.objects.filter(symbol=normalized_symbol).first()
     if stock:
         return stock
-    return get_profile(normalized_symbol)
+    return get_profile(normalized_symbol, include_quote=False)
 
 
 def _get_profile_fetch_result(symbol: str) -> tuple[cache_service.CacheFetchResult, dict[str, Any]]:
@@ -595,31 +595,52 @@ def get_prices(symbol: str, range_value: str = "1y") -> dict[str, Any]:
     normalized_symbol = stock.symbol
     today = timezone.now().date()
     start_date = today - timedelta(days=365 * 5)
-    payload = cache_service.get_or_fetch(
+    price_history_result = cache_service.get_or_fetch_with_meta(
         normalized_symbol,
         "historical-price-eod/full",
         {"from": start_date.isoformat(), "to": today.isoformat()},
         PRICES_TTL_HOURS,
         lambda: fmp_service.fetch_price_history(normalized_symbol, start_date, today),
     )
-    history_rows = _extract_rows(payload)
+    history_rows = _extract_rows(price_history_result.data)
 
     with transaction.atomic():
+        existing_rows = {
+            price_row.date.isoformat(): price_row
+            for price_row in PriceHistory.objects.filter(
+                stock=stock,
+                date__in=[row.get("date") for row in history_rows if row.get("date")],
+            )
+        }
         for row in history_rows:
             row_date = row.get("date")
             if not row_date:
                 continue
-            PriceHistory.objects.update_or_create(
+            defaults = {
+                "open": _to_decimal(row.get("open")) or Decimal("0"),
+                "high": _to_decimal(row.get("high")) or Decimal("0"),
+                "low": _to_decimal(row.get("low")) or Decimal("0"),
+                "close": _to_decimal(row.get("close")) or Decimal("0"),
+                "volume": _to_int(row.get("volume")) or 0,
+            }
+            existing_row = existing_rows.get(row_date)
+            if existing_row and price_history_result.cache_hit:
+                continue
+            if existing_row:
+                if _has_field_changes(existing_row, defaults) or existing_row.fetched_at != price_history_result.fetched_at:
+                    PriceHistory.objects.filter(pk=existing_row.pk).update(
+                        **defaults,
+                        fetched_at=price_history_result.fetched_at,
+                    )
+                continue
+
+            created_row = PriceHistory.objects.create(
                 stock=stock,
                 date=row_date,
-                defaults={
-                    "open": _to_decimal(row.get("open")) or Decimal("0"),
-                    "high": _to_decimal(row.get("high")) or Decimal("0"),
-                    "low": _to_decimal(row.get("low")) or Decimal("0"),
-                    "close": _to_decimal(row.get("close")) or Decimal("0"),
-                    "volume": _to_int(row.get("volume")) or 0,
-                },
+                **defaults,
             )
+            if created_row.fetched_at != price_history_result.fetched_at:
+                PriceHistory.objects.filter(pk=created_row.pk).update(fetched_at=price_history_result.fetched_at)
 
     cutoff = today - timedelta(days=PRICE_RANGE_DAYS[range_value])
     queryset = PriceHistory.objects.filter(stock=stock, date__gte=cutoff).order_by("-date")

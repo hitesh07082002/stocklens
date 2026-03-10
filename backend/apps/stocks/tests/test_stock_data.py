@@ -165,7 +165,7 @@ def financial_growth_payload(symbol: str = "AAPL") -> list[dict]:
     ]
 
 
-def historical_price_payload(symbol: str = "AAPL") -> dict:
+def historical_price_payload(symbol: str = "AAPL", latest_close: float = 185.50) -> dict:
     today = timezone.now().date()
     return {
         "symbol": symbol,
@@ -175,7 +175,7 @@ def historical_price_payload(symbol: str = "AAPL") -> dict:
                 "open": 184.10,
                 "high": 186.10,
                 "low": 183.80,
-                "close": 185.50,
+                "close": latest_close,
                 "volume": 52340100,
             },
             {
@@ -387,6 +387,59 @@ def test_prices_view_is_self_sufficient_on_cold_cache(api_client):
     assert response.data["count"] == 2
     assert response.data["prices"][0]["close"] == "185.5000"
     assert PriceHistory.objects.filter(stock_id="AAPL").count() == 2
+
+
+@responses.activate
+def test_get_prices_ensures_stock_without_quote_fetch():
+    add_json_response(responses, "profile", profile_payload())
+    add_json_response(responses, "historical-price-eod/full", historical_price_payload())
+
+    prices = get_prices("AAPL", "1y")
+
+    assert prices["symbol"] == "AAPL"
+    assert prices["count"] == 2
+    assert len(responses.calls) == 2
+    assert all("/quote" not in call.request.url for call in responses.calls)
+
+
+@responses.activate
+def test_warm_cache_prices_read_preserves_price_history_fetched_at():
+    StockFactory(symbol="AAPL", name="Apple Inc.", exchange="NASDAQ", sector="Technology")
+    add_json_response(responses, "historical-price-eod/full", historical_price_payload())
+
+    get_prices("AAPL", "1y")
+    frozen_fetched_at = timezone.now() - timedelta(days=30)
+    latest_row = PriceHistory.objects.get(stock_id="AAPL", date=timezone.now().date())
+    PriceHistory.objects.filter(pk=latest_row.pk).update(fetched_at=frozen_fetched_at)
+
+    get_prices("AAPL", "1y")
+
+    latest_row.refresh_from_db()
+    assert latest_row.fetched_at == frozen_fetched_at
+    assert len(responses.calls) == 1
+
+
+@responses.activate
+def test_refreshed_price_fetch_updates_price_history_data_and_fetched_at():
+    StockFactory(symbol="AAPL", name="Apple Inc.", exchange="NASDAQ", sector="Technology")
+    add_json_response(responses, "historical-price-eod/full", historical_price_payload())
+
+    get_prices("AAPL", "1y")
+    frozen_fetched_at = timezone.now() - timedelta(days=30)
+    latest_row = PriceHistory.objects.get(stock_id="AAPL", date=timezone.now().date())
+    PriceHistory.objects.filter(pk=latest_row.pk).update(fetched_at=frozen_fetched_at)
+    StockCache.objects.filter(symbol="AAPL", endpoint="historical-price-eod/full").update(
+        expires_at=timezone.now() - timedelta(seconds=1),
+        fetched_at=frozen_fetched_at,
+    )
+    add_json_response(responses, "historical-price-eod/full", historical_price_payload(latest_close=190.25))
+
+    get_prices("AAPL", "1y")
+
+    latest_row.refresh_from_db()
+    assert latest_row.close == Decimal("190.2500")
+    assert latest_row.fetched_at > frozen_fetched_at
+    assert len(responses.calls) == 2
 
 
 def test_get_prices_rejects_invalid_range():
