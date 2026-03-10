@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand, CommandError
 
-from apps.stocks.models import Stock, StockCache
+from apps.stocks.models import Stock
 from apps.stocks.services.fmp_service import FMPAPIError
 from apps.stocks.services.stock_service import get_metrics, get_profile
 
@@ -39,12 +39,14 @@ class Command(BaseCommand):
         seeded = 0
         skipped: list[str] = []
         for index, symbol in enumerate(tickers, start=1):
-            cache_before = StockCache.objects.count()
+            calls_used = 0
             try:
-                stock = get_profile(symbol, include_quote=False)
-                latest_metric = get_metrics(symbol, include_growth=False)
+                stock, profile_calls = get_profile(symbol, include_quote=False, include_fetch_count=True)
+                calls_used += profile_calls
+                latest_metric, metric_calls = get_metrics(symbol, include_growth=False, include_fetch_count=True)
+                calls_used += metric_calls
             except FMPAPIError as exc:
-                calls_used = max(0, StockCache.objects.count() - cache_before)
+                calls_used += getattr(exc, "upstream_fetches", 0)
                 total_fmp_calls += calls_used
                 skipped.append(symbol)
                 self.stdout.write(
@@ -57,7 +59,6 @@ class Command(BaseCommand):
             Stock.objects.filter(symbol=stock.symbol).update(is_sp500=True)
             if latest_metric and latest_metric.market_cap and not stock.market_cap:
                 Stock.objects.filter(symbol=stock.symbol).update(market_cap=latest_metric.market_cap)
-            calls_used = max(0, StockCache.objects.count() - cache_before)
             total_fmp_calls += calls_used
             seeded += 1
             self.stdout.write(f"[{index}/{len(tickers)}] Seeded {symbol} ({calls_used} FMP calls)")

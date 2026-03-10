@@ -17,7 +17,7 @@ Frontend: ██████░░░░░░  50%   Week 2 stock header/search
 ```
 
 **Current Week:** Week 2 stabilized
-**Next Action:** Open the Week 2 PR from the re-verified bounded top-80 screener pool, then continue to Week 3.
+**Next Action:** Review and merge the Week 2 PR from the re-verified bounded top-80 screener pool, then continue to Week 3.
 
 ---
 

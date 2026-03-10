@@ -13,10 +13,11 @@ FMP_BASE_URL = "https://financialmodelingprep.com/stable"
 
 
 class FMPAPIError(UpstreamServiceError):
-    def __init__(self, endpoint: str, status_code: int | None, detail: str):
+    def __init__(self, endpoint: str, status_code: int | None, detail: str, upstream_fetches: int = 0):
         self.endpoint = endpoint
         self.status_code = status_code
         self.detail = detail
+        self.upstream_fetches = upstream_fetches
         super().__init__(detail)
 
 

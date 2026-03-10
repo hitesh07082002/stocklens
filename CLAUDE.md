@@ -138,7 +138,7 @@ V1 is done when a user can:
 
 - **Single API (FMP)** — no Finnhub in V1. One data source = simpler.
 - **Cache-through proxy** — Django caches all FMP responses with TTL (12hr-30d). Frontend never calls FMP directly.
-- **S&P 500 seeding** — bundled market-cap-ordered top-80 ticker list (FMP `sp500-constituent` restricted). Screener pool stays dynamic and honest on the active key; full data fetched on-demand per stock visit.
+- **S&P 500 seeding** — bundled market-cap-ordered top-80 ticker list (FMP `sp500-constituent` restricted). Screener pool stays dynamic and honest on the active key; full data fetched on-demand per stock visit. Expanding beyond 80 requires extending the ordered source list first.
 - **No Celery/Redis in V1** — custom DB-backed StockCache table only.
 - **AI cached with data hash** — regenerate only when financials change.
 - **Portfolio simplified** — avg cost × shares. No lots, splits, or transaction history.

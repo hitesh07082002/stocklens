@@ -17,16 +17,18 @@ def install_seed_fakes(monkeypatch, symbols: list[str], failing_symbols: set[str
 
     monkeypatch.setattr(seed_command, "SP500_TICKERS_BY_MARKET_CAP", symbols)
 
-    def fake_get_profile(symbol: str, include_quote: bool = False) -> Stock:
+    def fake_get_profile(symbol: str, include_quote: bool = False, include_fetch_count: bool = False):
         stock, _ = Stock.objects.get_or_create(
             symbol=symbol,
             defaults={"name": f"{symbol} Holdings"},
         )
+        if include_fetch_count:
+            return stock, 1
         return stock
 
-    def fake_get_metrics(symbol: str, include_growth: bool = False) -> KeyMetric:
+    def fake_get_metrics(symbol: str, include_growth: bool = False, include_fetch_count: bool = False):
         if symbol in failing_symbols:
-            raise FMPAPIError("key-metrics", 402, "payment required")
+            raise FMPAPIError("key-metrics", 402, "payment required", upstream_fetches=1)
 
         stock = Stock.objects.get(symbol=symbol)
         metric, _ = KeyMetric.objects.get_or_create(
@@ -35,6 +37,8 @@ def install_seed_fakes(monkeypatch, symbols: list[str], failing_symbols: set[str
             fiscal_year=2024,
             defaults={"market_cap": market_caps[symbol]},
         )
+        if include_fetch_count:
+            return metric, 2
         return metric
 
     monkeypatch.setattr(seed_command, "get_profile", fake_get_profile)
@@ -49,8 +53,8 @@ def test_seed_sp500_batches_with_start_and_count(monkeypatch):
 
     flagged_symbols = set(Stock.objects.filter(is_sp500=True).values_list("symbol", flat=True))
     assert flagged_symbols == {"MSFT", "NVDA"}
-    assert "[1/2] Seeded MSFT" in stdout.getvalue()
-    assert "[2/2] Seeded NVDA" in stdout.getvalue()
+    assert "[1/2] Seeded MSFT (3 FMP calls)" in stdout.getvalue()
+    assert "[2/2] Seeded NVDA (3 FMP calls)" in stdout.getvalue()
 
 
 def test_seed_sp500_rerun_is_idempotent(monkeypatch):
@@ -72,4 +76,4 @@ def test_seed_sp500_failure_keeps_existing_sp500_flag(monkeypatch):
     call_command("seed_sp500", count=1, stdout=stdout)
 
     assert Stock.objects.get(symbol="AAPL").is_sp500 is True
-    assert "Skipped AAPL" in stdout.getvalue()
+    assert "Skipped AAPL (2 FMP calls)" in stdout.getvalue()

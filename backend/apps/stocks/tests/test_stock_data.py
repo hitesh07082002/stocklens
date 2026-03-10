@@ -8,7 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.stocks.models import FinancialStatement, KeyMetric, PriceHistory, Stock, StockCache
-from apps.stocks.services.stock_service import get_financials, get_metrics, get_profile
+from apps.stocks.services.stock_service import get_financials, get_metrics, get_prices, get_profile
 from apps.stocks.tests.factories import StockFactory
 
 
@@ -387,3 +387,10 @@ def test_prices_view_is_self_sufficient_on_cold_cache(api_client):
     assert response.data["count"] == 2
     assert response.data["prices"][0]["close"] == "185.5000"
     assert PriceHistory.objects.filter(stock_id="AAPL").count() == 2
+
+
+def test_get_prices_rejects_invalid_range():
+    StockFactory(symbol="AAPL", name="Apple Inc.", exchange="NASDAQ", sector="Technology")
+
+    with pytest.raises(ValueError, match="Unsupported price range '10y'"):
+        get_prices("AAPL", "10y")

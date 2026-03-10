@@ -133,17 +133,20 @@ export const handlers = [
       updated_at: "2026-03-10T12:00:00Z",
     }),
   ),
-  http.get("http://localhost:8000/api/v1/stocks/AAPL/prices/", () =>
-    HttpResponse.json({
+  http.get("http://localhost:8000/api/v1/stocks/AAPL/prices/", ({ request }) => {
+    const url = new URL(request.url)
+    const range = (url.searchParams.get("range") ?? "1y") as "1y" | "3y" | "5y"
+
+    return HttpResponse.json({
       symbol: "AAPL",
-      range: "1y",
+      range,
       prices: [
         { date: "2026-03-10", close: "185.5000", volume: 52340100 },
         { date: "2026-03-09", close: "183.2500", volume: 48920000 },
       ],
       count: 2,
-    }),
-  ),
+    })
+  }),
   http.get("/api/v1/stocks/AAPL/prices/", ({ request }) => {
     const url = new URL(request.url, "http://localhost:8000")
     const range = (url.searchParams.get("range") ?? "1y") as "1y" | "3y" | "5y"

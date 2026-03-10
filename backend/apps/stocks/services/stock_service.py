@@ -22,6 +22,8 @@ from apps.stocks.exceptions import StockNotFoundError
 from apps.stocks.models import FinancialStatement, KeyMetric, PriceHistory, RecentlyViewed, Stock
 from . import cache_service, fmp_service
 
+PRICE_RANGE_DAYS = {"1y": 365, "3y": 365 * 3, "5y": 365 * 5}
+
 
 def _normalize_symbol(symbol: str) -> str:
     return symbol.strip().upper()
@@ -86,6 +88,10 @@ def _has_field_changes(instance: Any, values: dict[str, Any]) -> bool:
     return any(getattr(instance, field_name) != field_value for field_name, field_value in values.items())
 
 
+def _count_upstream_fetches(*results: cache_service.CacheFetchResult | None) -> int:
+    return sum(1 for result in results if result is not None and not result.cache_hit)
+
+
 def _upsert_stock_snapshot(
     symbol: str,
     defaults: dict[str, Any],
@@ -127,9 +133,18 @@ def _get_profile_fetch_result(symbol: str) -> tuple[cache_service.CacheFetchResu
     return profile_result, profile_rows[0]
 
 
-def get_profile(symbol: str, include_quote: bool = True) -> Stock:
+def get_profile(
+    symbol: str,
+    include_quote: bool = True,
+    include_fetch_count: bool = False,
+) -> Stock | tuple[Stock, int]:
     normalized_symbol = _normalize_symbol(symbol)
-    profile_result, profile_row = _get_profile_fetch_result(normalized_symbol)
+    try:
+        profile_result, profile_row = _get_profile_fetch_result(normalized_symbol)
+    except fmp_service.FMPAPIError as exc:
+        exc.upstream_fetches = max(exc.upstream_fetches, 1)
+        raise
+    upstream_fetches = _count_upstream_fetches(profile_result)
 
     quote_row: dict[str, Any] | None = None
     quote_result: cache_service.CacheFetchResult | None = None
@@ -142,11 +157,14 @@ def get_profile(symbol: str, include_quote: bool = True) -> Stock:
                 PRICES_TTL_HOURS,
                 lambda: fmp_service.fetch_quote(normalized_symbol),
             )
+            upstream_fetches += _count_upstream_fetches(quote_result)
             quote_rows = _extract_rows(quote_result.data)
             quote_row = quote_rows[0] if quote_rows else None
         except fmp_service.FMPAPIError as exc:
+            exc.upstream_fetches = max(exc.upstream_fetches, upstream_fetches + 1)
             if exc.status_code != 402:
                 raise
+            upstream_fetches = exc.upstream_fetches
             quote_row = None
 
     price_row = quote_row or profile_row
@@ -166,12 +184,15 @@ def get_profile(symbol: str, include_quote: bool = True) -> Stock:
     source_fetched_at = quote_result.fetched_at if quote_row and quote_result else profile_result.fetched_at
     force_refresh = (not profile_result.cache_hit) or (quote_result is not None and not quote_result.cache_hit)
 
-    return _upsert_stock_snapshot(
+    stock = _upsert_stock_snapshot(
         normalized_symbol,
         defaults,
         source_fetched_at=source_fetched_at,
         force_refresh=force_refresh,
     )
+    if include_fetch_count:
+        return stock, upstream_fetches
+    return stock
 
 
 def _upsert_financial_rows(
@@ -463,38 +484,47 @@ def get_metrics(
     symbol: str,
     period: str = FinancialStatement.ANNUAL,
     include_growth: bool = True,
-) -> KeyMetric | None:
+    include_fetch_count: bool = False,
+) -> KeyMetric | None | tuple[KeyMetric | None, int]:
     stock = _ensure_stock_exists(symbol)
     normalized_symbol = stock.symbol
 
-    ratio_result = cache_service.get_or_fetch_with_meta(
-        normalized_symbol,
-        "ratios",
-        {"period": period},
-        METRICS_TTL_HOURS,
-        lambda: fmp_service.fetch_ratios(normalized_symbol, period),
-    )
-    key_metrics_result = cache_service.get_or_fetch_with_meta(
-        normalized_symbol,
-        "key-metrics",
-        {"period": period},
-        METRICS_TTL_HOURS,
-        lambda: fmp_service.fetch_key_metrics(normalized_symbol, period),
-    )
-    ratio_rows = _extract_rows(ratio_result.data)
-    key_metric_rows = _extract_rows(key_metrics_result.data)
-    growth_rows: list[dict[str, Any]] = []
-    growth_result: cache_service.CacheFetchResult | None = None
-    if include_growth:
-        growth_result = cache_service.get_or_fetch_with_meta(
+    upstream_fetches = 0
+    try:
+        ratio_result = cache_service.get_or_fetch_with_meta(
             normalized_symbol,
-            "financial-growth",
+            "ratios",
             {"period": period},
             METRICS_TTL_HOURS,
-            lambda: fmp_service.fetch_financial_growth(normalized_symbol, period),
+            lambda: fmp_service.fetch_ratios(normalized_symbol, period),
         )
-        growth_rows = _extract_rows(growth_result.data)
+        upstream_fetches += _count_upstream_fetches(ratio_result)
+        key_metrics_result = cache_service.get_or_fetch_with_meta(
+            normalized_symbol,
+            "key-metrics",
+            {"period": period},
+            METRICS_TTL_HOURS,
+            lambda: fmp_service.fetch_key_metrics(normalized_symbol, period),
+        )
+        upstream_fetches += _count_upstream_fetches(key_metrics_result)
+        growth_rows: list[dict[str, Any]] = []
+        growth_result: cache_service.CacheFetchResult | None = None
+        if include_growth:
+            growth_result = cache_service.get_or_fetch_with_meta(
+                normalized_symbol,
+                "financial-growth",
+                {"period": period},
+                METRICS_TTL_HOURS,
+                lambda: fmp_service.fetch_financial_growth(normalized_symbol, period),
+            )
+            upstream_fetches += _count_upstream_fetches(growth_result)
+            growth_rows = _extract_rows(growth_result.data)
+    except fmp_service.FMPAPIError as exc:
+        exc.upstream_fetches = max(exc.upstream_fetches, upstream_fetches + 1)
+        raise
 
+    ratio_rows = _extract_rows(ratio_result.data)
+    key_metric_rows = _extract_rows(key_metrics_result.data)
     rows_by_year: dict[int, dict[str, Any]] = {}
     for collection, source in (
         (ratio_rows, "ratio"),
@@ -543,15 +573,24 @@ def get_metrics(
             saved_metrics.append(KeyMetric.objects.get(pk=metric.pk))
 
         if not saved_metrics:
+            if include_fetch_count:
+                return None, upstream_fetches
             return None
 
         latest_year = max(metric.fiscal_year for metric in saved_metrics)
         _ensure_latest_metric_flag(stock, period, latest_year)
 
-    return KeyMetric.objects.filter(stock=stock, period=period, is_latest=True).first()
+    latest_metric = KeyMetric.objects.filter(stock=stock, period=period, is_latest=True).first()
+    if include_fetch_count:
+        return latest_metric, upstream_fetches
+    return latest_metric
 
 
 def get_prices(symbol: str, range_value: str = "1y") -> dict[str, Any]:
+    if range_value not in PRICE_RANGE_DAYS:
+        valid_ranges = ", ".join(PRICE_RANGE_DAYS)
+        raise ValueError(f"Unsupported price range '{range_value}'. Expected one of: {valid_ranges}.")
+
     stock = _ensure_stock_exists(symbol)
     normalized_symbol = stock.symbol
     today = timezone.now().date()
@@ -582,8 +621,7 @@ def get_prices(symbol: str, range_value: str = "1y") -> dict[str, Any]:
                 },
             )
 
-    days_by_range = {"1y": 365, "3y": 365 * 3, "5y": 365 * 5}
-    cutoff = today - timedelta(days=days_by_range[range_value])
+    cutoff = today - timedelta(days=PRICE_RANGE_DAYS[range_value])
     queryset = PriceHistory.objects.filter(stock=stock, date__gte=cutoff).order_by("-date")
     prices = [
         {"date": row.date, "close": row.close, "volume": row.volume}

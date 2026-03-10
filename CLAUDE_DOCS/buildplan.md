@@ -237,7 +237,7 @@ python manage.py startapp screener apps/screener  # placeholder app
 ```
 - `apps/stocks/management/commands/seed_sp500.py`
 - Load hardcoded S&P 500 ticker list (Python list in the command, sorted by market cap descending — largest first)
-- For each ticker in range `[start, start+count)`: call `stock_service.get_profile` + `stock_service.get_metrics` (3 FMP calls/stock)
+- For each ticker in range `[start, start+count)`: call `stock_service.get_profile` + `stock_service.get_metrics` (up to 3 FMP calls/stock on a cold run)
 - Mark `Stock.is_sp500 = True`
 
 **CLI interface:**
@@ -246,9 +246,9 @@ python manage.py seed_sp500 [--start N] [--count N]
   --start   Index into the sorted ticker list to begin at (default: 0)
   --count   Number of tickers to seed in this run (default: 80)
 ```
-- Omitting both args seeds the bundled top 80 stocks by market cap (indices 0–79), using ~240 FMP calls
+- Omitting both args seeds the bundled top 80 stocks by market cap (indices 0–79), using ~240 FMP calls on a fully cold run
 - `--start` and `--count` slice within that ordered bundled list. Extending beyond the top 80 requires adding more ordered symbols to the source list first.
-- The command prints progress: `[42/80] Seeded MSFT (3 FMP calls)` and a final summary: `Seeded 80 stocks, 240 FMP calls used`
+- The command prints progress: `[42/80] Seeded MSFT (N FMP calls)` and a final summary: `Seeded X stocks, Y FMP calls used`
 - Idempotent: re-running with the same range skips already-cached stocks (0 FMP calls for cache hits)
 - **Start this seeding process immediately in Week 2, even if it runs in the background all week.**
 

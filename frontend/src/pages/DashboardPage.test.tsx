@@ -45,7 +45,7 @@ describe("DashboardPage", () => {
     expect(screen.getByText(/Current EOD Price/i)).toBeInTheDocument()
     expect(screen.getByText(/\$185\.50/i)).toBeInTheDocument()
     expect(screen.getByRole("heading", { name: /Price history/i })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "1Y" })).toBeInTheDocument()
+    expect(await screen.findByRole("button", { name: "1Y" })).toBeInTheDocument()
     expect(screen.getByText(/Financials stays intentionally deferred\./i)).toBeInTheDocument()
   })
 
@@ -110,7 +110,7 @@ describe("DashboardPage", () => {
     expect(await screen.findByRole("heading", { name: /Apple Inc\./i })).toBeInTheDocument()
     await waitFor(() => expect(requestedRanges.at(-1)).toBe("1y"))
 
-    await user.click(screen.getByRole("button", { name: "3Y" }))
+    await user.click(await screen.findByRole("button", { name: "3Y" }))
 
     await waitFor(() => expect(requestedRanges.at(-1)).toBe("3y"))
   })
