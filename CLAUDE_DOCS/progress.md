@@ -17,7 +17,7 @@ Frontend: ███░░░░░░░░░  25%   Week 1 shell + auth comple
 ```
 
 **Current Week:** Week 1 complete
-**Next Action:** Start Week 2 — stock data layer + cache-through FMP proxy after the remaining manual Week 1 checks (`createsuperuser`, curl auth smoke) are closed
+**Next Action:** Start Week 2 — stock data layer + cache-through FMP proxy
 
 ---
 
@@ -43,7 +43,7 @@ Frontend: ███░░░░░░░░░  25%   Week 1 shell + auth comple
 - [x] `.env` file created with `DATABASE_URL`, `FMP_API_KEY`, `ANTHROPIC_API_KEY`, `SECRET_KEY`
 - [x] PostgreSQL database created (`createdb stocklens_dev`)
 - [x] `python manage.py migrate` (built-in tables)
-- [ ] `python manage.py createsuperuser` (admin access)
+- [x] `python manage.py createsuperuser` (admin access)
 
 ### Auth (apps/users)
 - [x] `apps/users/` app created
@@ -56,7 +56,7 @@ Frontend: ███░░░░░░░░░  25%   Week 1 shell + auth comple
 - [x] `POST /api/v1/auth/login/` — returns `{access, refresh, user}`
 - [x] `POST /api/v1/auth/refresh/` — rotates refresh token
 - [x] URLs registered in `config/urls.py`
-- [ ] Manual curl test: signup → login → refresh
+- [x] Manual curl test: signup → login → refresh
 - [x] pytest: signup validation (duplicate, weak, mismatch)
 - [x] Django admin: CustomUser visible at `/admin/`
 

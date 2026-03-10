@@ -35,6 +35,7 @@
 | Env vars | python-dotenv | python-dotenv>=1.0 |
 | Testing (BE) | pytest + factory_boy | pytest-django, factory_boy |
 | Testing (FE) | Vitest + RTL + MSW | vitest, @testing-library/react, msw |
+| Manual browser QA | Playwright MCP | `.mcp.json` → `npx @playwright/mcp@latest` |
 
 ---
 
@@ -331,6 +332,10 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 <ReactQueryDevtools initialIsOpen={false} />
 ```
 Shows all active queries, cache state, stale/fresh status. Essential for debugging caching behaviour.
+
+### Playwright Testing Split
+- **Week 1-2:** use Playwright MCP for manual browser QA during implementation/review. It is an external MCP tool, not an installed repo dependency.
+- **Later:** add `@playwright/test` only after one seeded-stock dashboard flow is stable. That suite should start with a few smoke tests and then run in CI.
 
 ---
 
