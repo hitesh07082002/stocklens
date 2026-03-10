@@ -887,7 +887,7 @@ Upgrade only when sending links to recruiters. One env var change (`RENDER_PLAN`
 - Set `DEBUG=False`, `SECRET_KEY` (random 50 chars), `ALLOWED_HOSTS`, `FRONTEND_URL`
 - Run `python manage.py collectstatic` (whitenoise serves admin static files)
 - Run `python manage.py migrate`
-- Run `python manage.py seed_sp500` (default: top 80 by market cap, ~240 FMP calls = 1 day; then `--start 80 --count 80` daily until all 500 seeded)
+- Run `python manage.py seed_sp500` (default: bundled top 80 by market cap, ~240 FMP calls = 1 day; `--start`/`--count` slice within that ordered list)
 - Set `VITE_API_URL` in Vercel to deployed Render URL
 - Set `DATABASE_URL` in Render to Neon connection string
 
@@ -951,7 +951,7 @@ These contracts are **final** — do not re-derive, re-debate, or introduce alte
 | F | **Health score:** Self-sufficient endpoint | If score exists and `calculated_at` > latest `KeyMetric.fetched_at` AND `FinancialStatement.fetched_at`, return cached. Else synchronously refresh inputs and recompute. |
 | G | **Screener pool_size:** Dynamic | `KeyMetric.objects.filter(is_latest=True, stock__is_sp500=True).count()` — not hardcoded 500. |
 | H | **Rate limiting:** DB counter queries | NL search via `NLSearchLog` model. AI summary via `AISummaryCache` count. No `django-ratelimit`. All daily limits use UTC calendar day. |
-| I | **seed_sp500 CLI:** `--start 0 --count 80` defaults | Ticker list sorted by market cap desc. Omitting args seeds top 80. Idempotent. |
+| I | **seed_sp500 CLI:** `--start 0 --count 80` defaults | Bundled ticker list sorted by market cap desc. Omitting args seeds the repository's ordered top-80 slice. Idempotent. |
 | J | **Deployment:** Render + Neon + Vercel | Code is deployment-agnostic (env vars only). No Docker in V1. |
 | K | **Daily limit boundary:** UTC midnight | `TIME_ZONE = "UTC"` in Django settings. All `__date=timezone.now().date()` queries use UTC. |
 | L | **FMP field names:** `change` and `changePercentage` | Both profile and quote use `change` (not `changes`) and `changePercentage` (not `changesPercentage`). `changePercentage` is in percent-points — divide by 100 for decimal fraction. |

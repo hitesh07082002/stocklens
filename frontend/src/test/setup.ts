@@ -1,9 +1,28 @@
 import { cleanup } from "@testing-library/react"
 import "@testing-library/jest-dom/vitest"
-import { afterAll, afterEach, beforeAll, beforeEach } from "vitest"
+import { afterAll, afterEach, beforeAll, beforeEach, vi } from "vitest"
 
 import { server } from "../mocks/server"
 import { useAuthStore } from "../store/authStore"
+
+
+vi.mock("lightweight-charts", () => {
+  const fitContent = vi.fn()
+  const setData = vi.fn()
+  const addSeries = vi.fn(() => ({ setData }))
+  const timeScale = vi.fn(() => ({ fitContent }))
+  const remove = vi.fn()
+  const createChart = vi.fn(() => ({
+    addSeries,
+    timeScale,
+    remove,
+  }))
+
+  return {
+    AreaSeries: Symbol("AreaSeries"),
+    createChart,
+  }
+})
 
 
 function createStorageMock() {
@@ -59,6 +78,8 @@ afterEach(() => {
 })
 
 beforeEach(() => {
+  vi.restoreAllMocks()
+  vi.clearAllMocks()
   window.localStorage.clear()
   useAuthStore.setState({
     accessToken: null,

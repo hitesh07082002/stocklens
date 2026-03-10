@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
     "apps.users",
+    "apps.stocks",
 ]
 
 MIDDLEWARE = [
@@ -102,3 +103,5 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = split_csv(
     os.getenv("FRONTEND_URL", "http://localhost:5173,http://127.0.0.1:5173")
 )
+
+FMP_API_KEY = os.getenv("FMP_API_KEY", "")

@@ -263,9 +263,9 @@ UNIQUE constraint on (symbol, endpoint, params)
 - First visit to a stock = 10 calls. Every subsequent visit = 0 (cached).
 - **~25 unique new stocks per day** before hitting limit
 - With caching, all repeat visits are free indefinitely
-- S&P 500 seed (minimal): 500 stocks × 3 calls (profile + ratios + key-metrics) = 1,500 calls = **~6 days**
-- S&P 500 seed (full): 500 stocks × 10 calls = 5,000 calls = **~20 days**
-- **Recommended:** Seed top 80 on day 1 (240 calls), continue remaining 420 over next 6 days. Full data fetched on-demand per stock visit.
+- Bundled Week 2 seed: 80 stocks × 3 calls (profile + ratios + key-metrics) = **240 calls = ~1 day**
+- Full data for a visited stock: ~10 calls on the first uncached dashboard visit, then 0 while cached
+- **Recommended:** Seed the bundled top 80 first, keep the screener pool dynamic, and extend the ordered source list only when a broader curated universe is available locally.
 - If limit becomes a problem → FMP Starter ($19/mo, unlimited)
 
 ### S&P 500 Seeding Strategy
@@ -275,8 +275,8 @@ python manage.py seed_sp500
 ```
 
 Django management command that:
-1. Reads S&P 500 ticker list from hardcoded CSV (FMP `sp500-constituent` endpoint is restricted on free tier — source list from Wikipedia/GitHub)
-2. Phase 1 (screener-ready): Fetches profile + ratios + key-metrics per stock (3 calls each). Top 80 by market cap first (~1 day, 240 calls), then remaining 420 (~6 more days at ~80/day).
+1. Reads the bundled market-cap-ordered top-80 ticker list from a hardcoded Python list (FMP `sp500-constituent` is restricted on the free tier)
+2. Phase 1 (screener-ready): Fetches profile + ratios + key-metrics per stock (3 calls each). `--start` and `--count` batch within that ordered top-80 list.
 3. Phase 2 (on-demand): Full data (statements, prices, dividends, growth) fetched when a user visits a specific stock's dashboard page.
 4. Stores in `stocks` and `key_metrics` tables. Enables screener and NL search to work against 500 stocks.
 5. On paid tier ($19/mo): seeds all 500 stocks with full data in ~1 day.
@@ -513,7 +513,7 @@ These are not counted as features but are required to ship:
 | Data accuracy concerns | Medium | High | Show data source + timestamp. "Data by FMP" attribution. Never show stale data as current. |
 | Legal: financial advice liability | Low | High | Disclaimers on every page. Never use "buy/sell/recommend" language. |
 | Over-engineering | Medium | Medium | DB cache not Redis. SimpleJWT not OAuth. No Celery. Add complexity only when forced. |
-| S&P 500 seed takes ~7 days (screener-ready) | Low | Medium | Seed top 80 on day 1 (240 calls). Remaining 420 over next 6 days (~80/day). Full data on-demand. |
+| Bundled Week 2 seed still depends on free-tier 402 behavior | Low | Medium | Seed the ordered top-80 list first, keep `pool_size` dynamic, and preserve existing seeded flags when a refetch fails. |
 | Anthropic API key exposure | Low | High | Server-side only. Never in frontend code. Environment variables. |
 
 ---

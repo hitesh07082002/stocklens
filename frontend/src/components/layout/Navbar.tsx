@@ -2,6 +2,7 @@ import { Link, NavLink, useLocation, useNavigate } from "react-router-dom"
 
 import { useAuthStore } from "../../store/authStore"
 import { useUiStore } from "../../store/uiStore"
+import { SearchAutocomplete } from "../stocks/SearchAutocomplete"
 import { Button } from "../ui/Button"
 
 
@@ -35,19 +36,12 @@ export function Navbar() {
               StockLens
             </Link>
             <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold uppercase tracking-[0.22em] text-muted">
-              Week 1
+              Week 2
             </span>
           </div>
 
           <div className="flex flex-1 flex-col gap-3 lg:flex-row lg:items-center lg:justify-end">
-            <div className="flex min-w-0 flex-1 items-center rounded-full border border-border bg-white/80 px-4 py-2 dark:bg-slate-950/80 lg:max-w-md">
-              <input
-                aria-label="Stock search placeholder"
-                className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-muted dark:text-slate-50"
-                placeholder="Search placeholder: AAPL, MSFT, Apple..."
-                type="search"
-              />
-            </div>
+            <SearchAutocomplete />
 
             <div className="flex flex-wrap items-center gap-2">
               <Button aria-label="Toggle dark mode" onClick={toggleTheme} variant="secondary">

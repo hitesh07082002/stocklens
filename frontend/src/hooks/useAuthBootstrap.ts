@@ -4,6 +4,23 @@ import { authApi } from "../api/auth"
 import { getRefreshToken, getStoredUser, setRefreshToken } from "../lib/storage"
 import { useAuthStore } from "../store/authStore"
 
+let bootstrapRefreshPromise: Promise<Awaited<ReturnType<typeof authApi.refresh>>> | null = null
+let bootstrapRefreshToken: string | null = null
+
+function refreshDuringBootstrap(refreshToken: string) {
+  if (bootstrapRefreshPromise && bootstrapRefreshToken === refreshToken) {
+    return bootstrapRefreshPromise
+  }
+
+  // React StrictMode remounts effects in dev, so bootstrap refresh must be shared.
+  bootstrapRefreshToken = refreshToken
+  bootstrapRefreshPromise = authApi.refresh(refreshToken).finally(() => {
+    bootstrapRefreshPromise = null
+    bootstrapRefreshToken = null
+  })
+
+  return bootstrapRefreshPromise
+}
 
 export function useAuthBootstrap() {
   const clearAuth = useAuthStore((state) => state.clearAuth)
@@ -32,7 +49,7 @@ export function useAuthBootstrap() {
       finishBootstrapping()
 
       try {
-        const tokens = await authApi.refresh(refreshToken)
+        const tokens = await refreshDuringBootstrap(refreshToken)
         if (!active) {
           return
         }
