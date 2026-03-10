@@ -1,4 +1,5 @@
 import pytest
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from .factories import UserFactory
@@ -120,6 +121,8 @@ def test_signup_normalizes_email(api_client):
 
     assert signup_response.status_code == 201
     assert signup_response.data["user"]["email"] == "mixed.user@example.com"
+    user = get_user_model().objects.get(pk=signup_response.data["user"]["id"])
+    assert user.email == "mixed.user@example.com"
 
 
 def test_login_is_case_insensitive_for_email(api_client):
@@ -176,3 +179,37 @@ def test_refresh_token(api_client):
     assert response.status_code == 200
     assert set(response.data.keys()) == {"access", "refresh"}
     assert response.data["refresh"] != original_refresh
+
+
+def test_reusing_rotated_refresh_token_is_rejected(api_client):
+    signup_response = api_client.post(
+        reverse("auth-signup"),
+        {
+            "email": "refresh-reuse@example.com",
+            "password": "SecurePass123!",
+            "confirm_password": "SecurePass123!",
+        },
+        format="json",
+    )
+    assert signup_response.status_code == 201
+    original_refresh = signup_response.data["refresh"]
+
+    first_refresh_response = api_client.post(
+        reverse("auth-refresh"),
+        {"refresh": original_refresh},
+        format="json",
+    )
+
+    assert first_refresh_response.status_code == 200
+    assert set(first_refresh_response.data.keys()) == {"access", "refresh"}
+    assert first_refresh_response.data["refresh"] != original_refresh
+
+    reused_refresh_response = api_client.post(
+        reverse("auth-refresh"),
+        {"refresh": original_refresh},
+        format="json",
+    )
+
+    assert reused_refresh_response.status_code == 401
+    assert reused_refresh_response.data["detail"] == "Token is blacklisted"
+    assert reused_refresh_response.data["code"] == "token_not_valid"
