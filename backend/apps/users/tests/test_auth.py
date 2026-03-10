@@ -107,7 +107,7 @@ def test_login_success(api_client):
     assert response.data["user"]["email"] == "login@example.com"
 
 
-def test_signup_normalizes_email_and_login_is_case_insensitive(api_client):
+def test_signup_normalizes_email(api_client):
     signup_response = api_client.post(
         reverse("auth-signup"),
         {
@@ -120,6 +120,10 @@ def test_signup_normalizes_email_and_login_is_case_insensitive(api_client):
 
     assert signup_response.status_code == 201
     assert signup_response.data["user"]["email"] == "mixed.user@example.com"
+
+
+def test_login_is_case_insensitive_for_email(api_client):
+    UserFactory(email="mixed.user@example.com", password="SecurePass123!")
 
     login_response = api_client.post(
         reverse("auth-login"),
@@ -160,6 +164,7 @@ def test_refresh_token(api_client):
         },
         format="json",
     )
+    assert signup_response.status_code == 201
     original_refresh = signup_response.data["refresh"]
 
     response = api_client.post(

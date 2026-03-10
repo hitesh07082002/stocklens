@@ -13,6 +13,7 @@ describe("sanitizeNextPath", () => {
     expect(sanitizeNextPath(null)).toBe("/")
     expect(sanitizeNextPath("https://evil.com")).toBe("/")
     expect(sanitizeNextPath("//evil.com")).toBe("/")
+    expect(sanitizeNextPath("/\\evil.com")).toBe("/")
     expect(sanitizeNextPath("watchlist")).toBe("/")
   })
 })

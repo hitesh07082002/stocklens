@@ -2,6 +2,7 @@ import os
 
 import dj_database_url
 
+from .base import split_csv
 from .base import *  # noqa: F401,F403
 
 

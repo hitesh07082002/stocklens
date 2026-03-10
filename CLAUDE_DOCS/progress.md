@@ -8,7 +8,7 @@
 
 ## Quick Status
 
-```
+```text
 Phase: PLANNING ✓ → IMPLEMENTATION ✓
 
 Docs:     ████████████ 100%   All 6 CLAUDE_DOCS complete
