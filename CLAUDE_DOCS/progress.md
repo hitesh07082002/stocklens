@@ -2,22 +2,22 @@
 
 > **For Claude:** Read this file at the start of every session to know what's done and what's next.
 > Update checkboxes as work completes. Never mark done unless verified working.
-> Last updated: Mar 08, 2026
+> Last updated: Mar 10, 2026
 
 ---
 
 ## Quick Status
 
-```
-Phase: PLANNING ✓ → IMPLEMENTATION (not started)
+```text
+Phase: PLANNING ✓ → IMPLEMENTATION ✓
 
 Docs:     ████████████ 100%   All 6 CLAUDE_DOCS complete
-Backend:  ░░░░░░░░░░░░   0%   Not started
-Frontend: ░░░░░░░░░░░░   0%   Not started
+Backend:  ███░░░░░░░░░  25%   Week 1 scaffold + auth complete
+Frontend: ███░░░░░░░░░  25%   Week 1 shell + auth complete
 ```
 
-**Current Week:** Pre-implementation (docs done)
-**Next Action:** Start Week 1 — Django project setup + auth
+**Current Week:** Week 1 complete
+**Next Action:** Start Week 2 — stock data layer + cache-through FMP proxy
 
 ---
 
@@ -37,44 +37,44 @@ Frontend: ░░░░░░░░░░░░   0%   Not started
 ## Phase 2: Week 1 — Foundation
 
 ### Backend Setup
-- [ ] Django project created (`django-admin startproject config .`)
-- [ ] Virtual environment + pip install all backend packages
-- [ ] Settings split: `config/settings/base.py`, `dev.py`, `prod.py`
-- [ ] `.env` file created with `DATABASE_URL`, `FMP_API_KEY`, `ANTHROPIC_API_KEY`, `SECRET_KEY`
-- [ ] PostgreSQL database created (`createdb stocklens_dev`)
-- [ ] `python manage.py migrate` (built-in tables)
-- [ ] `python manage.py createsuperuser` (admin access)
+- [x] Django project created (`django-admin startproject config .`)
+- [x] Virtual environment + pip install all backend packages
+- [x] Settings split: `config/settings/base.py`, `dev.py`, `prod.py`
+- [x] `.env` file created with `DATABASE_URL`, `FMP_API_KEY`, `ANTHROPIC_API_KEY`, `SECRET_KEY`
+- [x] PostgreSQL database created (`createdb stocklens_dev`)
+- [x] `python manage.py migrate` (built-in tables)
+- [x] `python manage.py createsuperuser` (admin access)
 
 ### Auth (apps/users)
-- [ ] `apps/users/` app created
-- [ ] `CustomUser` model (email-based, schema.md Section 1)
-- [ ] `CustomUserManager` with `create_user`, `create_superuser`
-- [ ] `AUTH_USER_MODEL = "users.CustomUser"` in `base.py`
-- [ ] `python manage.py makemigrations users && python manage.py migrate`
-- [ ] Signup serializer (email unique, password 8+, confirm_password match)
-- [ ] `POST /api/v1/auth/signup/` — returns `{access, refresh, user}`
-- [ ] `POST /api/v1/auth/login/` — returns `{access, refresh, user}`
-- [ ] `POST /api/v1/auth/refresh/` — rotates refresh token
-- [ ] URLs registered in `config/urls.py`
-- [ ] Manual curl test: signup → login → refresh
-- [ ] pytest: signup validation (duplicate, weak, mismatch)
-- [ ] Django admin: CustomUser visible at `/admin/`
+- [x] `apps/users/` app created
+- [x] `CustomUser` model (email-based, schema.md Section 1)
+- [x] `CustomUserManager` with `create_user`, `create_superuser`
+- [x] `AUTH_USER_MODEL = "users.CustomUser"` in `base.py`
+- [x] `python manage.py makemigrations users && python manage.py migrate`
+- [x] Signup serializer (email unique, password 8+, confirm_password match)
+- [x] `POST /api/v1/auth/signup/` — returns `{access, refresh, user}`
+- [x] `POST /api/v1/auth/login/` — returns `{access, refresh, user}`
+- [x] `POST /api/v1/auth/refresh/` — rotates refresh token
+- [x] URLs registered in `config/urls.py`
+- [x] Manual curl test: signup → login → refresh
+- [x] pytest: signup validation (duplicate, weak, mismatch)
+- [x] Django admin: CustomUser visible at `/admin/`
 
 ### Frontend Setup
-- [ ] Vite React TypeScript project created (`npm create vite@latest`)
-- [ ] All npm packages installed (TanStack Query, Zustand, Axios, RHF, Zod, Shadcn)
-- [ ] Tailwind configured (`tailwind.config.ts`, `darkMode: "class"`)
-- [ ] Shadcn init + components installed (button, card, badge, skeleton, dialog, input)
-- [ ] Vite proxy configured (`/api` → `http://localhost:8000`)
-- [ ] `src/api/client.ts` — Axios instance with auth header + 401 refresh interceptor
-- [ ] `src/store/authStore.ts` — Zustand: accessToken, user, setAuth, clearAuth
-- [ ] `src/store/uiStore.ts` — Zustand: theme, setTheme
-- [ ] `App.tsx` — QueryClientProvider + ReactQueryDevtools + BrowserRouter
-- [ ] `src/router.tsx` — createBrowserRouter + PrivateRoute wrapper
-- [ ] `src/pages/LoginPage.tsx` — RHF + Zod, calls `POST /auth/login/`
-- [ ] `src/pages/SignupPage.tsx` — same pattern
-- [ ] Dark mode toggle in navbar
-- [ ] MSW setup (`src/mocks/`, auth handlers)
+- [x] Vite React TypeScript project created (`npm create vite@latest`)
+- [x] All npm packages installed (TanStack Query, Zustand, Axios, RHF, Zod, Shadcn)
+- [x] Tailwind configured (`tailwind.config.ts`, `darkMode: "class"`)
+- [x] Shadcn init + components installed (button, card, badge, skeleton, dialog, input)
+- [x] Vite proxy configured (`/api` → `http://localhost:8000`)
+- [x] `src/api/client.ts` — Axios instance with auth header + 401 refresh interceptor
+- [x] `src/store/authStore.ts` — Zustand: accessToken, user, setAuth, clearAuth
+- [x] `src/store/uiStore.ts` — Zustand: theme, setTheme
+- [x] `App.tsx` — QueryClientProvider + ReactQueryDevtools + BrowserRouter
+- [x] `src/router.tsx` — createBrowserRouter + PrivateRoute wrapper
+- [x] `src/pages/LoginPage.tsx` — RHF + Zod, calls `POST /auth/login/`
+- [x] `src/pages/SignupPage.tsx` — same pattern
+- [x] Dark mode toggle in navbar
+- [x] MSW setup (`src/mocks/`, auth handlers)
 
 **Week 1 checkpoint:** Login page signs in, stores JWT in Zustand, protected route works.
 

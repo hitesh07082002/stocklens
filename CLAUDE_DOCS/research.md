@@ -469,7 +469,9 @@ These are not counted as features but are required to ship:
 
 **Frontend:** vitest + React Testing Library + MSW. Test: components, chart rendering, API hooks (loading/error/success), screener filters.
 
-**Deferred to V1.5:** E2E (Playwright), load testing, visual regression.
+**Week 1-2 browser QA:** Playwright MCP for manual browser verification during implementation/review.
+
+**Deferred until end of Week 2 / start of Week 3:** repo-installed `@playwright/test` E2E smoke suite, once one seeded stock dashboard flow is stable. Load testing and visual regression remain deferred.
 
 ---
 

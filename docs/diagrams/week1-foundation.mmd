@@ -1,0 +1,6 @@
+flowchart LR
+    FE["React SPA\n(Vite + TypeScript)"] --> API["Django REST API\n(SimpleJWT auth)"]
+    API --> DB["PostgreSQL"]
+    API --> AUTH["CustomUser\napps/users"]
+    FE --> STORE["Zustand\naccess token in memory"]
+    FE --> LOCAL["localStorage\nrefresh token + user"]

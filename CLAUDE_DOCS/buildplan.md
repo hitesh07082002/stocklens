@@ -148,6 +148,7 @@ npx shadcn@latest add button card badge skeleton dialog input
 - `src/mocks/server.ts` — MSW setup for vitest
 - `vitest.config.ts` — jsdom environment, setup file
 - Tests: LoginPage renders + submits, ProtectedRoute redirects unauthenticated
+- **Week 1 browser QA:** use Playwright MCP from `.mcp.json` for manual visual verification only. Do **not** add `@playwright/test` yet.
 - **Verify:** `npx vitest run` → all pass
 
 ### Step 7: CI pipeline
@@ -270,6 +271,8 @@ python manage.py seed_sp500 [--start N] [--count N]
 - MSW handlers for stock profile + prices
 
 **Week 2 Done When:** `GET /api/v1/stocks/AAPL/` returns profile JSON. Price chart renders with 1Y of EOD data. Search finds AAPL from local DB. Seed command is running in background.
+
+**Playwright trigger point:** At the end of Week 2 or start of Week 3, once one seeded-symbol dashboard flow is stable (auth → search → `/stocks/AAPL/` → chart render), add a **small** `@playwright/test` smoke suite. First E2E tests: signup/login/logout, protected-route redirect + post-login return, seeded stock dashboard load.
 
 ---
 

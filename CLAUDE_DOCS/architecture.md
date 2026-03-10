@@ -714,7 +714,7 @@ export default defineConfig({
 
 **Mock data:** Use Django fixtures (`apps/stocks/fixtures/`) for UI dev. Never burn FMP API calls on frontend work.
 
-**Playwright MCP (UI review):** Configured in `.mcp.json` (project root). Claude Code uses Playwright to open `localhost:5173` in a visible browser, take screenshots, and visually verify frontend pages (layout, dark mode, responsive). No manual browser testing needed for initial pass — Claude self-reviews, user watches the browser window live.
+**Playwright MCP (UI review):** Configured in `.mcp.json` (project root). Claude Code uses Playwright to open `localhost:5173` in a visible browser, take screenshots, and visually verify frontend pages (layout, dark mode, responsive). This is **manual browser QA via MCP**, not a repo-installed Playwright test suite.
 
 ---
 
@@ -818,7 +818,7 @@ jobs:
 - **Real PostgreSQL in CI** — not SQLite. Catches DB-specific bugs (JSONField, unique_together).
 - **Fake API keys** — tests use `responses` (backend) and MSW (frontend) to mock all external calls. CI never hits FMP or Claude.
 - **Build check on frontend** — catches TypeScript errors and import issues before merge.
-- **No E2E in V1** — Playwright deferred to V1.5 (per research.md Section 9).
+- **No repo Playwright suite in Week 1** — use Playwright MCP for manual QA now. Add a small `@playwright/test` smoke suite at the end of Week 2 / start of Week 3, once one seeded dashboard flow is stable.
 - **No linting enforcement in V1** — add `ruff` + `eslint` in Week 6 polish.
 
 ### Test Conventions
@@ -827,6 +827,7 @@ jobs:
 |-------|------|--------------|-------------|
 | Backend | pytest + factory_boy | `responses` library mocks FMP HTTP | Models, services (cache hit/miss), views (200/400/401/404), DCF math, health score |
 | Frontend | vitest + RTL | MSW mocks API responses | Component renders, form validation, DCF formula, loading/error/empty states |
+| Manual browser QA | Playwright MCP | Real browser driven interactively by Codex/Claude | Visual layout, auth flow smoke checks, protected-route redirects, reload behavior |
 
 ---
 

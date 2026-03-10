@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --surface: 252 251 247;
+    --ink: 22 31 42;
+    --muted: 88 102 119;
+    --accent: 180 83 9;
+    --border: 205 214 224;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .dark {
+    --surface: 5 8 22;
+    --ink: 248 250 252;
+    --muted: 148 163 184;
+    --accent: 251 191 36;
+    --border: 51 65 85;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply min-w-[320px] bg-surface font-body text-ink;
+    margin: 0;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  code {
+    font-family: "SFMono-Regular", "SF Mono", Menlo, monospace;
+  }
+}
