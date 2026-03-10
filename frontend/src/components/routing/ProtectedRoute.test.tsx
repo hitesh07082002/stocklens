@@ -1,13 +1,15 @@
+import { StrictMode } from "react"
 import { screen, waitFor } from "@testing-library/react"
 import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
+import { authApi } from "../../api/auth"
 import { AppLayout } from "../layout/AppLayout"
 import { LoginPage } from "../../pages/LoginPage"
 import { WatchlistPage } from "../../pages/WatchlistPage"
 import { ProtectedRoute } from "./ProtectedRoute"
-import { render } from "@testing-library/react"
 import { useAuthStore } from "../../store/authStore"
+import { renderWithProviders } from "../../test/test-utils"
 
 
 function LocationProbe() {
@@ -18,8 +20,8 @@ function LocationProbe() {
 
 
 describe("ProtectedRoute", () => {
-  function renderProtectedRoute(initialEntry = "/watchlist") {
-    return render(
+  function renderProtectedRoute(initialEntry = "/watchlist", options?: { strictMode?: boolean }) {
+    const tree = (
       <MemoryRouter
         future={{ v7_relativeSplatPath: true, v7_startTransition: true }}
         initialEntries={[initialEntry]}
@@ -33,7 +35,11 @@ describe("ProtectedRoute", () => {
           </Route>
         </Routes>
         <LocationProbe />
-      </MemoryRouter>,
+      </MemoryRouter>
+    )
+
+    return renderWithProviders(
+      options?.strictMode ? <StrictMode>{tree}</StrictMode> : tree,
     )
   }
 
@@ -54,6 +60,38 @@ describe("ProtectedRoute", () => {
     await waitFor(() => expect(useAuthStore.getState().accessToken).toBe("mock-refreshed-access-token"))
     expect(screen.getByText("restored@example.com")).toBeInTheDocument()
     expect(window.localStorage.getItem("refresh_token")).toBe("mock-refreshed-refresh-token")
+  })
+
+  it("deduplicates bootstrap refresh in StrictMode and keeps the user signed in", async () => {
+    let refreshAttempts = 0
+    vi.spyOn(authApi, "refresh").mockImplementation(async (refreshToken) => {
+      refreshAttempts += 1
+
+      if (refreshToken !== "persisted-refresh-token") {
+        throw new Error("Unexpected refresh token.")
+      }
+
+      if (refreshAttempts === 1) {
+        return {
+          access: "strictmode-access-token",
+          refresh: "rotated-refresh-token",
+        }
+      }
+
+      throw new Error("Token is invalid or expired.")
+    })
+
+    window.localStorage.setItem("user", JSON.stringify({ id: 8, email: "strictmode@example.com" }))
+    window.localStorage.setItem("refresh_token", "persisted-refresh-token")
+
+    renderProtectedRoute("/watchlist", { strictMode: true })
+
+    await waitFor(() => expect(screen.getByRole("heading", { name: /watchlist shell/i })).toBeInTheDocument())
+    await waitFor(() => expect(useAuthStore.getState().accessToken).toBe("strictmode-access-token"))
+
+    expect(screen.getByText("strictmode@example.com")).toBeInTheDocument()
+    expect(window.localStorage.getItem("refresh_token")).toBe("rotated-refresh-token")
+    expect(refreshAttempts).toBe(1)
   })
 
   it("clears auth and stays unauthenticated when user exists without refresh token", async () => {

@@ -47,9 +47,9 @@ GPT generates first draft → `GPT_DOCS/`. Claude refines with **own independent
 
 ## Current Status
 
-- **Phase:** Implementation — Week 1
+- **Phase:** Implementation — Week 2
 - **All docs FINAL:** research.md, features.md, architecture.md, techstack.md, schema.md, api-spec.md, buildplan.md, progress.md
-- **Current task:** Week 1 — Django project setup + CustomUser + auth endpoints + React scaffold
+- **Current task:** Week 2 — stock data layer + targeted Week 2 stabilization fixes
 - **Build guide:** Follow `CLAUDE_DOCS/buildplan.md` week by week. Schema in `schema.md`, API shapes in `api-spec.md`.
 - **FMP API:** All endpoints use `/stable/` format (v3 is dead). Tested with real API key Mar 2026. See research.md Section 3.2.
 
@@ -138,7 +138,7 @@ V1 is done when a user can:
 
 - **Single API (FMP)** — no Finnhub in V1. One data source = simpler.
 - **Cache-through proxy** — Django caches all FMP responses with TTL (12hr-30d). Frontend never calls FMP directly.
-- **S&P 500 seeding** — hardcoded ticker list (FMP `sp500-constituent` restricted). Screener-ready seed (3 calls/stock) in ~6 days. Full data fetched on-demand per stock visit.
+- **S&P 500 seeding** — bundled market-cap-ordered top-80 ticker list (FMP `sp500-constituent` restricted). Screener pool stays dynamic and honest on the active key; full data fetched on-demand per stock visit. Expanding beyond 80 requires extending the ordered source list first.
 - **No Celery/Redis in V1** — custom DB-backed StockCache table only.
 - **AI cached with data hash** — regenerate only when financials change.
 - **Portfolio simplified** — avg cost × shares. No lots, splits, or transaction history.

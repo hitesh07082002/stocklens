@@ -14,7 +14,7 @@
 - **KeyMetric.is_latest flag** — Only the most recent fiscal year row per stock has `is_latest=True`. Screener filters on `is_latest=True` to return one row per stock (not duplicate rows across years).
 - **StockCache uses params_hash** — JSONField can't be in a Django unique_together directly. MD5 hash of canonical params JSON used instead.
 - **PortfolioHolding unique per user+stock** — one row per holding, updated in place. No transaction history in V1.
-- **Domain tables use auto_now for fetched_at** — `FinancialStatement.fetched_at` and `KeyMetric.fetched_at` use `auto_now=True` so timestamp updates when data is refreshed via `update_or_create`. `PriceHistory.fetched_at` uses `auto_now_add=True` since price rows are INSERT-only (one per date, never updated).
+- **Domain freshness timestamps track upstream refreshes** — `FinancialStatement.fetched_at` and `KeyMetric.fetched_at` update when new upstream data is stored. `PriceHistory.fetched_at` is preserved on warm-cache reads and updated only when a real upstream price refresh is stored.
 - **RecentlyViewed uses auto_now** — `viewed_at` auto-updates on every view. Service trims to last 10.
 - **AISummaryCache is OneToOne** — one summary per stock. Regenerated when `financial_data_hash` changes.
 - **HealthScore is OneToOne** — one score per stock. Recomputed when KeyMetric updates.
@@ -250,7 +250,7 @@ class PriceHistory(models.Model):
     low        = models.DecimalField(max_digits=12, decimal_places=4)
     close      = models.DecimalField(max_digits=12, decimal_places=4)
     volume     = models.BigIntegerField()
-    fetched_at = models.DateTimeField(auto_now_add=True)
+    fetched_at = models.DateTimeField(auto_now_add=True)  # set on insert, then explicitly updated only on real upstream refreshes
 
     class Meta:
         db_table        = "price_history"

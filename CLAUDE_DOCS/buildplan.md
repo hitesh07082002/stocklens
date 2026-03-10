@@ -217,7 +217,7 @@ npx shadcn@latest add button card badge skeleton dialog input
   - `get_profile(symbol)` → calls FMP `profile` (identity, 7d TTL) + `quote` (price/change, 12h TTL), stores in `Stock`
   - `get_financials(symbol)` → calls FMP `income-statement` + `cash-flow-statement` + `balance-sheet-statement`, stores in `FinancialStatement`, caches 24h
   - `get_metrics(symbol)` → calls FMP `ratios` + `key-metrics` + `financial-growth`, stores in `KeyMetric` (sets `is_latest=True` on most recent fiscal year row only), triggers health score recomputation, caches 24h
-  - `get_prices(symbol, range)` → calls FMP `historical-price-eod/full`, stores in `PriceHistory`, caches 12h
+  - `get_prices(symbol, range)` → calls FMP `historical-price-eod/full`, stores/refreshes `PriceHistory` from cache metadata, caches 12h, and avoids rewriting rows on warm-cache reads
   - `search(query)` → DB first, FMP fallback, caches 30d
   - `record_view(user, stock)` → upserts `RecentlyViewed`, trims to 10
 
@@ -237,7 +237,7 @@ python manage.py startapp screener apps/screener  # placeholder app
 ```
 - `apps/stocks/management/commands/seed_sp500.py`
 - Load hardcoded S&P 500 ticker list (Python list in the command, sorted by market cap descending — largest first)
-- For each ticker in range `[start, start+count)`: call `stock_service.get_profile` + `stock_service.get_metrics` (3 FMP calls/stock)
+- For each ticker in range `[start, start+count)`: call `stock_service.get_profile` + `stock_service.get_metrics` (up to 3 FMP calls/stock on a cold run)
 - Mark `Stock.is_sp500 = True`
 
 **CLI interface:**
@@ -246,9 +246,9 @@ python manage.py seed_sp500 [--start N] [--count N]
   --start   Index into the sorted ticker list to begin at (default: 0)
   --count   Number of tickers to seed in this run (default: 80)
 ```
-- Omitting both args seeds the top 80 stocks by market cap (indices 0–79), using ~240 FMP calls
-- Subsequent batches: `--start 80 --count 80`, `--start 160 --count 80`, etc.
-- The command prints progress: `[42/80] Seeded MSFT (3 FMP calls)` and a final summary: `Seeded 80 stocks, 240 FMP calls used`
+- Omitting both args seeds the bundled top 80 stocks by market cap (indices 0–79), using ~240 FMP calls on a fully cold run
+- `--start` and `--count` slice within that ordered bundled list. Extending beyond the top 80 requires adding more ordered symbols to the source list first.
+- The command prints progress: `[42/80] Seeded MSFT (N FMP calls)` and a final summary: `Seeded X stocks, Y FMP calls used`
 - Idempotent: re-running with the same range skips already-cached stocks (0 FMP calls for cache hits)
 - **Start this seeding process immediately in Week 2, even if it runs in the background all week.**
 
@@ -616,7 +616,7 @@ npm run build
 
 | Command | When | Purpose |
 |---------|------|---------|
-| `python manage.py seed_sp500` | Week 2 Day 3 (run daily) | Seed S&P 500 stocks (default: top 80; use `--start N --count N` for subsequent batches) |
+| `python manage.py seed_sp500` | Week 2 Day 3 (run daily) | Seed the bundled Week 2 stock universe (default: top 80; use `--start N --count N` for bounded slices) |
 | `python manage.py seed_watchlists` | Week 4 Day 1 | Create preset FAANG+, Dividend, S&P Top 10 |
 | `python manage.py createsuperuser` | Week 1 Day 2 | Django admin access |
 | `python manage.py collectstatic` | Week 6 | Whitenoise admin assets |

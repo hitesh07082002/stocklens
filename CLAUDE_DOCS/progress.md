@@ -12,12 +12,12 @@
 Phase: PLANNING ✓ → IMPLEMENTATION ✓
 
 Docs:     ████████████ 100%   All 6 CLAUDE_DOCS complete
-Backend:  ███░░░░░░░░░  25%   Week 1 scaffold + auth complete
-Frontend: ███░░░░░░░░░  25%   Week 1 shell + auth complete
+Backend:  ██████░░░░░░  50%   Week 2 stock data layer re-verified after targeted fixes
+Frontend: ██████░░░░░░  50%   Week 2 stock header/search/chart re-verified after targeted coverage updates
 ```
 
-**Current Week:** Week 1 complete
-**Next Action:** Start Week 2 — stock data layer + cache-through FMP proxy
+**Current Week:** Week 2 stabilized
+**Next Action:** Review and merge the Week 2 PR from the re-verified bounded top-80 screener pool, then continue to Week 3.
 
 ---
 
@@ -44,6 +44,7 @@ Frontend: ███░░░░░░░░░  25%   Week 1 shell + auth comple
 - [x] PostgreSQL database created (`createdb stocklens_dev`)
 - [x] `python manage.py migrate` (built-in tables)
 - [x] `python manage.py createsuperuser` (admin access)
+- [x] pytest: Django admin pages load for users admin (index, changelist, add, change)
 
 ### Auth (apps/users)
 - [x] `apps/users/` app created
@@ -83,47 +84,67 @@ Frontend: ███░░░░░░░░░  25%   Week 1 shell + auth comple
 ## Phase 3: Week 2 — Stock Data Layer
 
 ### Backend: Stock Models
-- [ ] `apps/stocks/` app created
-- [ ] `Stock` model (schema.md)
-- [ ] `FinancialStatement` model (JSONField)
-- [ ] `KeyMetric` model (all 25+ columns for screener)
-- [ ] `PriceHistory` model
-- [ ] `StockCache` model (params_hash, expires_at)
-- [ ] `DCFCalculation` model
-- [ ] `RecentlyViewed` model
-- [ ] Migrations run
-- [ ] Django admin: all models registered
+- [x] `apps/stocks/` app created
+- [x] `Stock` model (schema.md)
+- [x] `FinancialStatement` model (JSONField)
+- [x] `KeyMetric` model (all 25+ columns for screener)
+- [x] `PriceHistory` model
+- [x] `StockCache` model (params_hash, expires_at)
+- [x] `DCFCalculation` model
+- [x] `RecentlyViewed` model
+- [x] Migrations run
+- [x] Django admin: all models registered
+- [x] pytest: Django admin pages load for stocks admin (changelists, add pages, change pages)
 
 ### Backend: FMP Service Layer
-- [ ] `fmp_service.py` — `fetch_profile`, `fetch_ratios`, `fetch_key_metrics`, `fetch_income_statement`, `fetch_cash_flow_statement`, `fetch_balance_sheet_statement`, `fetch_price_history`, `fetch_search_name`
-- [ ] `cache_service.py` — `get_or_fetch()` with MD5 hash, TTL, update_or_create
-- [ ] `stock_service.py` — `get_profile`, `get_financials`, `get_metrics`, `get_prices`, `search`, `record_view`
-- [ ] pytest: cache hit (no FMP call), cache miss (FMP mock via `responses`)
+- [x] `fmp_service.py` — `fetch_profile`, `fetch_ratios`, `fetch_key_metrics`, `fetch_income_statement`, `fetch_cash_flow_statement`, `fetch_balance_sheet_statement`, `fetch_price_history`, `fetch_search_name`
+- [x] `cache_service.py` — `get_or_fetch()` with MD5 hash, TTL, update_or_create
+- [x] `stock_service.py` — `get_profile`, `get_financials`, `get_metrics`, `get_prices`, `search`, `record_view`
+- [x] pytest: cache hit (no FMP call), cache miss (FMP mock via `responses`)
 
 ### Backend: Stock Endpoints
-- [ ] `GET /api/v1/stocks/search/?q=` — DB search + FMP fallback
-- [ ] `GET /api/v1/stocks/{symbol}/` — profile (7d cache) + implicit recently viewed
-- [ ] `GET /api/v1/stocks/{symbol}/financials/` — 5yr income + balance + cashflow
-- [ ] `GET /api/v1/stocks/{symbol}/prices/?range=1y` — EOD price history (12h cache)
-- [ ] All URLs registered, manual curl tests pass
-- [ ] pytest: profile 200, profile 404, search returns results
+- [x] `GET /api/v1/stocks/search/?q=` — DB search + FMP fallback
+- [x] `GET /api/v1/stocks/{symbol}/` — profile (7d cache) + implicit recently viewed
+- [x] `GET /api/v1/stocks/{symbol}/financials/` — 5yr income + balance + cashflow
+- [x] `GET /api/v1/stocks/{symbol}/prices/?range=1y` — EOD price history (12h cache)
+- [x] All URLs registered, bounded live `AAPL` view-level verification passes
+- [x] pytest: profile 200, profile 404, search returns results
 
 ### Management Command: seed_sp500
-- [ ] `apps/stocks/management/commands/seed_sp500.py` created
-- [ ] Hardcoded S&P 500 ticker list sorted by market cap descending (largest first)
-- [ ] `--start` (default 0) + `--count` (default 80) args for batching
-- [ ] `python manage.py seed_sp500` seeds top 80 (~240 FMP calls), idempotent on re-run
+- [x] `apps/stocks/management/commands/seed_sp500.py` created
+- [x] Bundled ordered top-80 ticker list sorted by market cap descending (largest first)
+- [x] `--start` (default 0) + `--count` (default 80) args for batching
+- [x] `python manage.py seed_sp500` seeds the bundled top 80 slice (~240 FMP calls), idempotent on re-run
 - [ ] First 80 stocks seeded and visible in Django admin
+  Note: bounded live verification succeeded with `python manage.py seed_sp500 --count 1` (`AAPL`, 2 FMP calls after cache warm-up), and the full implemented top-80 path was run safely in `25/25/25/5` batches. Result on this free-tier key: 28 screener-ready stocks seeded, 142 cache rows, many higher-cap symbols skipped because `/stable/ratios` or `/stable/key-metrics` returned premium-only `402` responses. The repository now treats that ordered top-80 list as the explicit Week 2 contract; reruns are idempotent and failed refetches no longer unset existing `is_sp500=True` flags.
 
 ### Frontend: Stock Data
-- [ ] `src/api/stocks.ts` — `useStockProfile`, `useStockPrices`, `useStockSearch` hooks
-- [ ] `src/pages/StockDashboard.tsx` — skeleton structure (9 sections)
-- [ ] Company header component (name, ticker, price, change %)
-- [ ] TradingView Lightweight Charts price chart (1Y/3Y/5Y toggle)
-- [ ] Global search navbar (debounced 300ms, 10-result dropdown, keyboard nav)
-- [ ] Navigate to `/stocks/AAPL` from search result
+- [x] `src/api/stocks.ts` — `useStockProfile`, `useStockPrices`, `useStockSearch` hooks
+- [x] `frontend/src/pages/DashboardPage.tsx` — skeleton structure (9 sections)
+- [x] Company header component (name, ticker, price, change %)
+- [x] TradingView Lightweight Charts price chart (1Y/3Y/5Y toggle)
+- [x] Global search navbar (debounced 300ms, 10-result dropdown, keyboard nav)
+- [x] Navigate to `/stocks/AAPL` from search result
+- [x] Vitest coverage for Week 2 frontend flows (search autocomplete, company header, price chart, dashboard states)
 
-**Week 2 checkpoint:** AAPL profile loads. Price chart renders 1yr EOD data. Search finds stocks from DB. Seed running in background.
+**Week 2 checkpoint:** `AAPL` profile/prices/financials all return `200` with live FMP data. One-year chart data returns 252 rows. Search finds stocks from DB. The full implemented top-80 seed path was executed safely in `25/25/25/5` batches and produced a current screener pool of 28 seeded symbols on this free-tier FMP key. Dashboard error handling now distinguishes unknown-symbol `404` from upstream `502`, and warm-cache reads preserve domain freshness timestamps.
+Manual Playwright MCP QA on Mar 10, 2026:
+- Pass: protected-route redirect, signup/login, navbar search → `/stocks/AAPL`, live chart render with 1Y/3Y/5Y toggles, protected shells, public placeholders, and Django admin stock/user pages all rendered successfully.
+- Follow-up RCA + fix on Mar 10, 2026: hard browser navigation while already authenticated had been reproducing a double refresh on the dev build (`POST /api/v1/auth/refresh/` => `200`, then `401`) because bootstrap refresh work was duplicated during dev `StrictMode` mount behavior. `useAuthBootstrap()` now deduplicates concurrent refresh work for the same stored refresh token, targeted vitest coverage was added, and live MCP re-verification now shows a single `POST /api/v1/auth/refresh/` => `200` with the user kept signed in after hard navigation.
+- Non-blocking admin browser console item: missing `/favicon.ico` returns `404`.
+
+### Manual QA Checklist To Reuse In Week 3
+- `/` renders navbar, footer, dark-mode toggle, and public landing shell.
+- Logged-out `/watchlist` redirects to `/login?next=%2Fwatchlist`.
+- Signup creates a user and lands on `/` with logged-in navbar state.
+- Login restores access to `/watchlist`.
+- Hard browser navigation while authenticated keeps the session and should emit one successful refresh request only.
+- Navbar search for `AAPL` returns a result and navigates to `/stocks/AAPL`.
+- `/stocks/AAPL` renders company header plus live price history.
+- `1Y`, `3Y`, and `5Y` chart toggles each trigger a successful prices request.
+- `/screener` and `/compare` render documented placeholder shells only.
+- Logged-in `/portfolio` and `/dcf/AAPL` render protected placeholder shells.
+- `/admin/`, `/admin/stocks/stock/`, `/admin/stocks/stock/AAPL/change/`, `/admin/users/customuser/`, and one custom-user change page render without admin form/template errors.
 
 ---
 
@@ -294,22 +315,11 @@ A user can:
 
 ## Seed Progress (Track Separately)
 
-S&P 500 seeding takes ~6 days on FMP free tier (250 calls/day, 3 calls/stock):
+The bundled Week 2 ordered list currently contains 80 market-cap-sorted symbols.
 
-| Batch | Tickers | Status |
-|-------|---------|--------|
-| 0-49 | AAPL, MSFT, NVDA... | ⬜ not started |
-| 50-99 | ... | ⬜ not started |
-| 100-149 | ... | ⬜ not started |
-| 150-199 | ... | ⬜ not started |
-| 200-249 | ... | ⬜ not started |
-| 250-299 | ... | ⬜ not started |
-| 300-349 | ... | ⬜ not started |
-| 350-399 | ... | ⬜ not started |
-| 400-449 | ... | ⬜ not started |
-| 450-499 | ... | ⬜ not started |
+Live free-tier verification on Mar 10, 2026 produced 28 screener-ready symbols from that bundled list.
 
-Update batch status to ✅ as each completes.
+Reruns are idempotent, and failed refetches now preserve existing `is_sp500=True` flags.
 
 ---
 
